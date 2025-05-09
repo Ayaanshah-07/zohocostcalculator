@@ -1,0 +1,12 @@
+# Ensure consistent line endings for all text files
+txt eol=lf
+*.css eol=lf
+*.tsx eol=lf
+*.ts eol=lf
+*.json eol=lf
+*.mjs eol=lf
+*.yaml eol=lf
+*.svg eol=lf
+*.png binary
+*.jpg binary
+*.lock binary

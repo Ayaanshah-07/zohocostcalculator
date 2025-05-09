@@ -1,0 +1,304 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Futuristic Cursor and Click Effect Styles */
+.custom-cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  will-change: transform;
+  transform: translate(-50%, -50%);
+}
+
+/* Center dot */
+.cursor-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background-color: rgba(0, 140, 255, 0.9); /* Light Blue #008cff */
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 5px rgba(0, 140, 255, 0.8);
+}
+
+/* Circular Targeting HUD Styles */
+.cursor-outer-ring {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgba(0, 140, 255, 0.6); /* Light Blue #008cff */
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.2s ease, height 0.2s ease, border 0.2s ease;
+}
+
+.cursor-middle-ring {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 1px dashed rgba(0, 140, 255, 0.5); /* Light Blue #008cff */
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-inner-ring {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgba(0, 140, 255, 0.7); /* Light Blue #008cff */
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Crosshair */
+.cursor-crosshair-horizontal {
+  position: absolute;
+  width: 20px;
+  height: 1px;
+  background-color: rgba(0, 140, 255, 0.7); /* Light Blue #008cff */
+  transform: translate(-50%, -50%);
+}
+
+.cursor-crosshair-vertical {
+  position: absolute;
+  width: 1px;
+  height: 20px;
+  background-color: rgba(0, 140, 255, 0.7); /* Light Blue #008cff */
+  transform: translate(-50%, -50%);
+}
+
+/* Corner markers */
+.cursor-corner {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: rgba(0, 140, 255, 0.8); /* Light Blue #008cff */
+  border-style: solid;
+  border-width: 0;
+}
+
+.cursor-corner-tl {
+  top: -25px;
+  left: -25px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.cursor-corner-tr {
+  top: -25px;
+  right: -25px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+
+.cursor-corner-bl {
+  bottom: -25px;
+  left: -25px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+
+.cursor-corner-br {
+  bottom: -25px;
+  right: -25px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+/* Rotating segment */
+.cursor-rotating-segment {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: rgba(0, 140, 255, 0.9); /* Light Blue #008cff */
+  transform-origin: center;
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+/* States */
+.cursor-outer-ring.clicking {
+  border-color: rgba(0, 17, 126, 0.9); /* Navy Blue #00117e */
+  box-shadow: 0 0 15px rgba(0, 17, 126, 0.5); /* Navy Blue #00117e */
+  animation: pulse 0.5s ease-out;
+}
+
+.cursor-outer-ring.hovering {
+  width: 60px;
+  height: 60px;
+  border-width: 2px;
+  border-color: rgba(0, 140, 255, 0.8); /* Light Blue #008cff */
+  box-shadow: 0 0 15px rgba(0, 140, 255, 0.4);
+}
+
+.cursor-click-effect {
+  position: fixed;
+  pointer-events: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid rgba(0, 17, 126, 0.8); /* Navy Blue #00117e */
+  transform: translate(-50%, -50%);
+  z-index: 9998;
+  animation: rippleOut 0.8s ease-out forwards;
+}
+
+/* Button ripple effects */
+.ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba(0, 140, 255, 0.3); /* Light Blue #008cff */
+  width: 100px;
+  height: 100px;
+  margin-top: -50px;
+  margin-left: -50px;
+  transform: scale(0);
+  animation: ripple 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+.scan-line {
+  position: absolute;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 140, 255, 0.8), transparent); /* Light Blue #008cff */
+  top: 0;
+  left: -100%;
+  animation: scan 0.6s linear;
+  pointer-events: none;
+}
+
+/* Button clicked state */
+.clicked {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 8px rgba(0, 140, 255, 0.5); /* Light Blue #008cff */
+}
+
+/* Common interactive elements should have position relative for ripple effect */
+button, .interactive {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animation Keyframes */
+@keyframes pulse {
+  0% { transform: translate(-50%, -50%) scale(0.8); }
+  50% { transform: translate(-50%, -50%) scale(1.2); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+@keyframes rippleOut {
+  to {
+    width: 80px;
+    height: 80px;
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+@keyframes scan {
+  to { left: 100%; }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
