@@ -644,7 +644,8 @@ export default function QuotationForm() {
                       {isSubmitting ? "Processing..." : "Generate Instant Quotation"}
                     </Button>
                   </div>
-                <input name="LEADCF67" value={quotationData?.pricing?.totalPrice || 0} readOnly />
+                <input type="hidden" name="LEADCF67" />
+
 </form>
               </Form>
             </CardContent>
