@@ -158,10 +158,7 @@ export default function QuotationForm() {
       setShowQuotation(true);
 
       // ✅ Populate Zoho form fields before submission
-      console.log('💡 Submitting to Zoho...');
-        const formElement = zohoFormRef.current;
-        formElement = zohoFormRef.current;
-        if (!formElement) { console.warn('❌ formElement is null — Zoho form not in DOM'); return; }
+      const formElement = zohoFormRef.current;
       if (formElement) {
         formElement.querySelector('input[name="First Name"]').value = data.firstName;
         formElement.querySelector('input[name="Last Name"]').value = data.lastName;
@@ -180,23 +177,13 @@ export default function QuotationForm() {
         formElement.querySelector('input[name="LEADCF16"]').value = data.nationality;
 
         
-                        if (costField) {
-          costField.value = cost;
-          console.log("✅ Cost field set:", cost);
-        }
-
-        
-                        if (!costField) { console.warn('❌ costField is null — LEADCF67 input missing'); } else { console.log('✅ Cost field injected:', cost); costField.focus(); costField.blur(); }
-        if (costField) {
-          costField.value = cost;
-          costField.focus();
-          costField.blur();
-          console.log("✅ Cost field injected and synced:", cost);
-        }
         setTimeout(() => {
-          console.log('🚀 Submitting Zoho form now...');
+          const costField = formElement.querySelector('input[name="LEADCF67"]');
+          if (costField && quotationData?.pricing?.totalPrice) {
+            costField.value = quotation.totalCost;
+          }
           formElement.submit();
-        }, 200);
+        }, 5000); // ⏱ 5 second delay to ensure cost is available
 
       }
 
@@ -657,10 +644,8 @@ export default function QuotationForm() {
                       {isSubmitting ? "Processing..." : "Generate Instant Quotation"}
                     </Button>
                   </div>
-                {typeof quotationData?.totalCost === "number" && (
-          <input name="LEADCF67" defaultValue="" style={{ display: "block", border: "1px solid red", marginTop: "10px" }} />
-          )}
-        </form>
+                <input name="LEADCF67" value={quotationData?.pricing?.totalPrice || 0} readOnly />
+</form>
               </Form>
             </CardContent>
           </Card>
@@ -701,10 +686,8 @@ export default function QuotationForm() {
           <input name="LEADCF3" value="25%" readOnly />
           <input name="LEADCF2" value={form.getValues('campaignName')} readOnly />
           <input name="LEADCF16" value={form.getValues('nationality')} readOnly />
-        {typeof quotationData?.totalCost === "number" && (
-          <input name="LEADCF67" defaultValue="" style={{ display: "block", border: "1px solid red", marginTop: "10px" }} />
-          )}
-        </form>
+        <input name="LEADCF67" value={quotationData?.pricing?.totalPrice || 0} readOnly />
+</form>
 
         <iframe name="hidden_iframe" style={{ display: "none" }}></iframe>
       </>
