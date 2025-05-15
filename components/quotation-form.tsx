@@ -156,30 +156,6 @@ export default function QuotationForm() {
       
       // Show the quotation to the user
       setShowQuotation(true);
-
-      // ✅ Populate Zoho form fields before submission
-      const formElement = zohoFormRef.current;
-      if (formElement) {
-        formElement.querySelector('input[name="First Name"]').value = data.firstName;
-        formElement.querySelector('input[name="Last Name"]').value = data.lastName;
-        formElement.querySelector('input[name="Email"]').value = data.email;
-        formElement.querySelector('input[name="Mobile"]').value = data.mobile;
-        formElement.querySelector('input[name="LEADCF17"]').value = "Cost Calculator";
-        formElement.querySelector('input[name="LEADCF23"]').value = data.type;
-        formElement.querySelector('input[name="LEADCF22"]').value = data.emirate;
-        formElement.querySelector('input[name="LEADCF21"]').value = data.businessActivities.join(", ");
-        formElement.querySelector('input[name="LEADCF24"]').value = data.officeSpace;
-        formElement.querySelector('input[name="LEADCF26"]').value = data.shareholders;
-        formElement.querySelector('input[name="LEADCF25"]').value = data.visas;
-        formElement.querySelector('input[name="Lead Source"]').value = "Cost Calculator";
-        formElement.querySelector('input[name="LEADCF3"]').value = "25%";
-        formElement.querySelector('input[name="LEADCF2"]').value = "G12 Quote AI";
-        formElement.querySelector('input[name="LEADCF16"]').value = data.nationality;
-
-        formElement.querySelector('input[name="LEADCF67"]').value = `AED ${quotation.totalCost.toLocaleString()}`;
-      formElement.submit();
-      }
-
       
     } catch (error) {
       console.error('Error during form submission:', error);
