@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -41,248 +43,143 @@ import {
 } from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import { toast } from "@/hooks/use-toast";
 
-// Define validation schema
-const createFormValidation = (form) => {
-  const errors = {};
-  
-  // Validate firstName
-  if (!form.firstName || form.firstName.length < 2) {
-    errors.firstName = "First name must be at least 2 characters.";
-  }
-  
-  // Validate lastName
-  if (!form.lastName || form.lastName.length < 2) {
-    errors.lastName = "Last name must be at least 2 characters.";
-  }
-  
-  // Validate countryCode
-  if (!form.countryCode) {
-    errors.countryCode = "Please select a country code.";
-  }
-  
-  // Validate mobile
-  if (!form.mobile || form.mobile.length < 8) {
-    errors.mobile = "Please enter a valid mobile number.";
-  }
-  
-  // Validate email
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!form.email || !emailRegex.test(form.email)) {
-    errors.email = "Please enter a valid email address.";
-  }
-  
-  // Validate nationality
-  if (!form.nationality) {
-    errors.nationality = "Please select your nationality.";
-  }
-  
-  // Validate businessActivities
-  if (!form.businessActivities || form.businessActivities.length === 0) {
-    errors.businessActivities = "Please select at least one business activity.";
-  }
-  
-  return errors;
-};
+const formSchema = z.object({
+  firstName: z
+    .string()
+    .min(2, { message: "First name must be at least 2 characters." }),
+  lastName: z
+    .string()
+    .min(2, { message: "Last name must be at least 2 characters." }),
+  countryCode: z.string().min(1, { message: "Please select a country code." }),
+  mobile: z.string().min(8, { message: "Please enter a valid mobile number." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  nationality: z
+    .string()
+    .min(1, { message: "Please select your nationality." }),
+  type: z.enum(["Freezone", "Mainland"]),
+  emirate: z.enum([
+    "Dubai",
+    "Abu Dhabi",
+    "Ajman",
+    "Sharjah",
+    "RAK",
+    "Fujairah",
+    "Umm Al Quwain",
+  ]),
+  businessActivities: z
+    .array(z.enum(["Trading", "Manufacturing", "Services or Consultancy"]))
+    .refine((activities) => activities.length > 0, {
+      message: "Please select at least one business activity.",
+    }),
+  officeSpace: z.enum(["Yes", "No", "Not decided yet"]),
+  shareholders: z.enum(["1", "2", "3", "4", "5", "6"]),
+  visas: z.enum([
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+  ]),
+});
 
-// Debugging utility function
-function debugZohoForm() {
-  // Get the form element
-  const formEl = document.getElementById('zoho-react-form');
-  
-  if (!formEl) {
-    console.error("Zoho form element not found");
-    return {
-      formExists: false,
-      error: "Form element not found"
-    };
-  }
-  
-  console.log("Zoho Form Details:");
-  console.log("Form Action:", formEl.action);
-  console.log("Form Method:", formEl.method);
-  console.log("Form Target:", formEl.target);
-  
-  // Check all form inputs
-  const inputs = formEl.querySelectorAll('input');
-  const formData = {};
-  
-  inputs.forEach(input => {
-    console.log(`Input: ${input.name}, Value: ${input.value}, Type: ${input.type}`);
-    formData[input.name] = input.value;
-  });
-  
-  console.log("Form Data:", formData);
-  
-  // Check if iframe exists
-  const iframe = document.querySelector('iframe[name="zoho_iframe"]');
-  if (iframe) {
-    console.log("Zoho iframe found:", iframe);
-  } else {
-    console.error("Zoho iframe not found");
-  }
-  
-  return {
-    formExists: !!formEl,
-    iframeExists: !!iframe,
-    formData
-  };
-}
+type FormValues = z.infer<typeof formSchema>;
+
+const businessActivities = [
+  { id: "Trading", label: "Trading" },
+  { id: "Manufacturing", label: "Manufacturing" },
+  { id: "Services or Consultancy", label: "Services or Consultancy" },
+];
 
 export default function QuotationForm() {
-  const [quotationData, setQuotationData] = useState(null);
+  const zohoFormRef = useRef(null);
+  const [quotationData, setQuotationData] = useState<any>(null);
   const [showQuotation, setShowQuotation] = useState(false);
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [submitError, setSubmitError] = useState(null);
 
-  const defaultFormValues = {
-    firstName: "",
-    lastName: "",
-    countryCode: "+971",
-    mobile: "",
-    email: "",
-    nationality: "",
-    type: "Freezone",
-    emirate: "Dubai",
-    businessActivities: [],
-    officeSpace: "Not decided yet",
-    shareholders: "1",
-    visas: "0",
-  };
-
-  const form = useForm({
-    defaultValues: defaultFormValues
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      countryCode: "+971",
+      mobile: "",
+      email: "",
+      nationality: "",
+      type: "Freezone",
+      emirate: "Dubai",
+      businessActivities: [],
+      officeSpace: "Not decided yet",
+      shareholders: "1",
+      visas: "0",
+    },
   });
 
   const type = form.watch("type");
 
-  // Log when iframe loads
-  useEffect(() => {
-    const iframe = document.getElementById('zoho_iframe');
-    if (iframe) {
-      iframe.onload = () => {
-        console.log('Zoho iframe loaded/updated');
-        try {
-          // Try to access iframe content
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-          if (iframeDoc) {
-            console.log('Iframe content accessible:', iframeDoc.body?.innerHTML?.substring(0, 200) + '...');
-          }
-        } catch (e) {
-          console.log('Cannot access iframe content due to same-origin policy');
-        }
-      };
-    }
-  }, []);
-
-  async function onSubmit(data) {
+  async function onSubmit(data: FormValues) {
     try {
-      // Clear any previous errors
-      setValidationErrors({});
-      setSubmitError(null);
-      
-      // Validate form manually
-      const errors = createFormValidation(data);
-      if (Object.keys(errors).length > 0) {
-        setValidationErrors(errors);
-        
-        // Show first validation error to the user
-        const firstError = Object.values(errors)[0];
-        toast({
-          title: "Validation Error",
-          description: firstError,
-          variant: "destructive",
-        });
-        return;
-      }
-      
       setIsSubmitting(true);
-      console.log("Form submitted with data:", data);
-
+      
+      // Combine first and last name for the quotation
       const fullData = {
         ...data,
         name: `${data.firstName} ${data.lastName}`,
         mobile: `${data.countryCode} ${data.mobile}`,
-        emirates: data.emirate,
+        emirates: data.emirate, // Map to the old field name for compatibility
       };
 
+      // Generate the quotation
       const quotation = generateQuotation(fullData);
       setQuotationData(quotation);
+      
+      // Display success toast
+      toast({
+        title: "Success",
+        description: "Your quotation has been generated successfully.",
+        variant: "default",
+      });
+      
+      // Show the quotation to the user
+      setShowQuotation(true);
 
-      try {
-        // Get the form element
-        const formEl = document.getElementById('zoho-react-form');
-        
-        if (formEl) {
-          // Debug form state before submission
-          console.log("Zoho form found, preparing to submit...");
-          
-          // Set input values directly
-          const inputs = {
-            'First Name': data.firstName,
-            'Last Name': data.lastName,
-            'Email': data.email,
-            'Mobile': `${data.countryCode} ${data.mobile}`,
-            'LEADCF6': data.nationality,
-            'LEADCF1': data.emirate,
-            'LEADCF4': data.type,
-            'LEADCF3': data.businessActivities.join(', '),
-            'LEADCF5': data.officeSpace,
-            'LEADCF2': data.shareholders,
-            'LEADCF7': data.visas
-          };
-          
-          // Set values for all inputs
-          Object.entries(inputs).forEach(([name, value]) => {
-            const input = formEl.querySelector(`[name="${name}"]`);
-            if (input) {
-              input.value = value;
-              console.log(`Set ${name} to: ${value}`);
-            } else {
-              console.error(`Input field [name="${name}"] not found in the form`);
-            }
-          });
-          
-          // Debug logging before submission
-          const debugInfo = debugZohoForm();
-          console.log("Form state before submission:", debugInfo);
-          
-          // Submit the form - using the submit button instead of the form method
-          const submitButton = formEl.querySelector('input[type="submit"]');
-          if (submitButton) {
-            console.log("Submitting via button click...");
-            submitButton.click();
-          } else {
-            console.log("No submit button found, using form.submit() method...");
-            formEl.submit();
-          }
-          
-          console.log("Zoho form submission triggered");
-          
-          toast({
-            title: 'Success',
-            description: 'Your quotation has been generated and submitted to our team.',
-            variant: 'default',
-          });
+      // ✅ Populate Zoho form fields before submission
+      const formElement = zohoFormRef.current;
+      if (formElement) {
+        formElement.querySelector('input[name="First Name"]').value = data.firstName;
+        formElement.querySelector('input[name="Last Name"]').value = data.lastName;
+        formElement.querySelector('input[name="Email"]').value = data.email;
+        formElement.querySelector('input[name="Mobile"]').value = data.mobile;
+        formElement.querySelector('input[name="LEADCF17"]').value = "Cost Calculator";
+        formElement.querySelector('input[name="LEADCF23"]').value = data.type;
+        formElement.querySelector('input[name="LEADCF22"]').value = data.emirate;
+        formElement.querySelector('input[name="LEADCF21"]').value = data.businessActivities.join(", ");
+        formElement.querySelector('input[name="LEADCF24"]').value = data.officeSpace;
+        formElement.querySelector('input[name="LEADCF26"]').value = data.shareholders;
+        formElement.querySelector('input[name="LEADCF25"]').value = data.visas;
+        formElement.querySelector('input[name="Lead Source"]').value = "Cost Calculator";
+        formElement.querySelector('input[name="LEADCF3"]').value = "25%";
+        formElement.querySelector('input[name="LEADCF2"]').value = "G12 Quote AI";
+        formElement.querySelector('input[name="LEADCF16"]').value = data.nationality;
 
-          setShowQuotation(true);
-        } else {
-          console.error("Zoho form element not found");
-          setSubmitError("Form element not found. Please try again or contact support.");
-          throw new Error("Zoho form element not found");
-        }
-      } catch (error) {
-        console.error("Error submitting to Zoho CRM:", error);
-        toast({
-          title: "Error",
-          description: "Failed to submit your information to our CRM system. Please try again or contact support.",
-          variant: "destructive",
-        });
-        setSubmitError(error.message || "Unknown error submitting form");
+        formElement.submit();
       }
+
+      
     } catch (error) {
       console.error('Error during form submission:', error);
       toast({
@@ -290,7 +187,6 @@ export default function QuotationForm() {
         description: "There was a problem generating your quotation. Please try again.",
         variant: "destructive",
       });
-      setSubmitError(error.message || "Unknown error processing form");
     } finally {
       setIsSubmitting(false);
     }
@@ -299,52 +195,6 @@ export default function QuotationForm() {
   const handleBackToForm = () => {
     setShowQuotation(false);
   };
-
-  function testZohoSubmission() {
-    // Set test values
-    const testData = {
-      'First Name': 'Test',
-      'Last Name': 'User',
-      'Email': 'test@example.com',
-      'Mobile': '+971 55 123 4567',
-      'LEADCF6': 'United Arab Emirates',
-      'LEADCF1': 'Dubai',
-      'LEADCF4': 'Freezone',
-      'LEADCF3': 'Trading',
-      'LEADCF5': 'Yes',
-      'LEADCF2': '1',
-      'LEADCF7': '2'
-    };
-    
-    // Get the form
-    const formEl = document.getElementById('zoho-react-form');
-    if (!formEl) {
-      console.error("Test failed: Zoho form not found");
-      return;
-    }
-    
-    // Set test values on form
-    Object.entries(testData).forEach(([name, value]) => {
-      const input = formEl.querySelector(`[name="${name}"]`);
-      if (input) {
-        input.value = value;
-        console.log(`Test: Set ${name} to ${value}`);
-      } else {
-        console.error(`Test: Input ${name} not found`);
-      }
-    });
-    
-    // Log form state before submission
-    debugZohoForm();
-    
-    // Submit the form
-    try {
-      formEl.submit();
-      console.log("Test form submitted");
-    } catch (error) {
-      console.error("Error submitting test form:", error);
-    }
-  }
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
@@ -372,150 +222,171 @@ export default function QuotationForm() {
 
                       {/* First Name - full width on mobile, half width on desktop */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormItem>
-                          <FormLabel>First Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter your first name"
-                              {...form.register("firstName")}
-                            />
-                          </FormControl>
-                          {validationErrors.firstName && (
-                            <FormMessage>{validationErrors.firstName}</FormMessage>
+                        <FormField
+                          control={form.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>First Name</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter your first name"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </FormItem>
+                        />
 
-                        <FormItem>
-                          <FormLabel>Last Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter your last name"
-                              {...form.register("lastName")}
-                            />
-                          </FormControl>
-                          {validationErrors.lastName && (
-                            <FormMessage>{validationErrors.lastName}</FormMessage>
+                        <FormField
+                          control={form.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Last Name</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter your last name"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </FormItem>
+                        />
                       </div>
 
                       {/* Mobile Number - full width on mobile, split on desktop */}
                       <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-3 md:gap-4">
-                        <FormItem className="w-full">
-                          <FormLabel>Country Code</FormLabel>
-                          <Select
-                            onValueChange={(value) => form.setValue("countryCode", value)}
-                            defaultValue={form.getValues("countryCode")}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Code" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="max-h-[200px]">
-                              {countryCodes.map((code) => (
-                                <SelectItem
-                                  key={code.code}
-                                  value={code.code}
-                                >
-                                  {code.code} ({code.country})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {validationErrors.countryCode && (
-                            <FormMessage>{validationErrors.countryCode}</FormMessage>
+                        <FormField
+                          control={form.control}
+                          name="countryCode"
+                          render={({ field }) => (
+                            <FormItem className="w-full">
+                              <FormLabel>Country Code</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Code" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="max-h-[200px]">
+                                  {countryCodes.map((code) => (
+                                    <SelectItem
+                                      key={code.code}
+                                      value={code.code}
+                                    >
+                                      {code.code} ({code.country})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </FormItem>
+                        />
 
-                        <FormItem className="w-full md:col-span-2">
-                          <FormLabel>Mobile Number</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="XX XXX XXXX" 
-                              {...form.register("mobile")} 
-                            />
-                          </FormControl>
-                          {validationErrors.mobile && (
-                            <FormMessage>{validationErrors.mobile}</FormMessage>
+                        <FormField
+                          control={form.control}
+                          name="mobile"
+                          render={({ field }) => (
+                            <FormItem className="w-full md:col-span-2">
+                              <FormLabel>Mobile Number</FormLabel>
+                              <FormControl>
+                                <Input placeholder="XX XXX XXXX" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </FormItem>
+                        />
                       </div>
 
-                      <FormItem>
-                        <FormLabel>Email Address</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="email@example.com"
-                            {...form.register("email")}
-                          />
-                        </FormControl>
-                        {validationErrors.email && (
-                          <FormMessage>{validationErrors.email}</FormMessage>
-                        )}
-                      </FormItem>
-
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Nationality</FormLabel>
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email Address</FormLabel>
                             <FormControl>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={open}
-                                className="w-full justify-between"
-                              >
-                                {form.getValues("nationality")
-                                  ? nationalities.find(
-                                      (nationality) =>
-                                        nationality === form.getValues("nationality")
-                                    )
-                                  : "Select nationality"}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
+                              <Input
+                                placeholder="email@example.com"
+                                {...field}
+                              />
                             </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0">
-                            <Command>
-                              <CommandInput placeholder="Search nationality..." />
-                              <CommandList>
-                                <CommandEmpty>
-                                  No nationality found.
-                                </CommandEmpty>
-                                <CommandGroup className="max-h-[200px] overflow-auto">
-                                  {nationalities.map((nationality) => (
-                                    <CommandItem
-                                      key={nationality}
-                                      value={nationality}
-                                      onSelect={() => {
-                                        form.setValue(
-                                          "nationality",
-                                          nationality
-                                        );
-                                        setOpen(false);
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          form.getValues("nationality") === nationality
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        )}
-                                      />
-                                      {nationality}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                        {validationErrors.nationality && (
-                          <FormMessage>{validationErrors.nationality}</FormMessage>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </FormItem>
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="nationality"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Nationality</FormLabel>
+                            <Popover open={open} onOpenChange={setOpen}>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={open}
+                                    className="w-full justify-between"
+                                  >
+                                    {field.value
+                                      ? nationalities.find(
+                                          (nationality) =>
+                                            nationality === field.value
+                                        )
+                                      : "Select nationality"}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-full p-0">
+                                <Command>
+                                  <CommandInput placeholder="Search nationality..." />
+                                  <CommandList>
+                                    <CommandEmpty>
+                                      No nationality found.
+                                    </CommandEmpty>
+                                    <CommandGroup className="max-h-[200px] overflow-auto">
+                                      {nationalities.map((nationality) => (
+                                        <CommandItem
+                                          key={nationality}
+                                          value={nationality}
+                                          onSelect={() => {
+                                            form.setValue(
+                                              "nationality",
+                                              nationality
+                                            );
+                                            setOpen(false);
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              field.value === nationality
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                            )}
+                                          />
+                                          {nationality}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
 
                     <div className="space-y-6">
@@ -523,183 +394,235 @@ export default function QuotationForm() {
                         Business Setup Details
                       </h2>
 
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <Select
-                          onValueChange={(value) => form.setValue("type", value)}
-                          defaultValue={form.getValues("type")}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Freezone">
-                              Freezone
-                            </SelectItem>
-                            <SelectItem value="Mainland">
-                              Mainland
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Type</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Freezone">
+                                  Freezone
+                                </SelectItem>
+                                <SelectItem value="Mainland">
+                                  Mainland
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                      <FormItem>
-                        <FormLabel>Emirate</FormLabel>
-                        <Select
-                          onValueChange={(value) => form.setValue("emirate", value)}
-                          defaultValue={form.getValues("emirate")}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select emirate" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Dubai">Dubai</SelectItem>
-                            <SelectItem value="Abu Dhabi">
-                              Abu Dhabi
-                            </SelectItem>
-                            <SelectItem value="Sharjah">Sharjah</SelectItem>
-                            <SelectItem value="Ajman">Ajman</SelectItem>
-                            <SelectItem value="RAK">
-                              Ras Al Khaimah
-                            </SelectItem>
-                            <SelectItem value="Fujairah">
-                              Fujairah
-                            </SelectItem>
-                            <SelectItem value="Umm Al Quwain">
-                              Umm Al Quwain
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="emirate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Emirate</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select emirate" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Dubai">Dubai</SelectItem>
+                                <SelectItem value="Abu Dhabi">
+                                  Abu Dhabi
+                                </SelectItem>
+                                <SelectItem value="Sharjah">Sharjah</SelectItem>
+                                <SelectItem value="Ajman">Ajman</SelectItem>
+                                <SelectItem value="RAK">
+                                  Ras Al Khaimah
+                                </SelectItem>
+                                <SelectItem value="Fujairah">
+                                  Fujairah
+                                </SelectItem>
+                                <SelectItem value="Umm Al Quwain">
+                                  Umm Al Quwain
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                      <FormItem>
-                        <div className="mb-4">
-                          <FormLabel className="text-base">
-                            Business Activities
-                          </FormLabel>
-                          <FormDescription>
-                            {type === "Freezone"
-                              ? "You can select multiple activities for Freezone"
-                              : "You can select only one activity for Mainland"}
-                          </FormDescription>
-                        </div>
-                        {["Trading", "Manufacturing", "Services or Consultancy"].map((activity) => (
-                          <FormItem
-                            key={activity}
-                            className="flex flex-row items-start space-x-3 space-y-0"
-                          >
-                            <FormControl>
-                              <Checkbox
-                                checked={form.getValues("businessActivities")?.includes(activity)}
-                                onCheckedChange={(checked) => {
-                                  const currentActivities = form.getValues("businessActivities") || [];
+                      <FormField
+                        control={form.control}
+                        name="businessActivities"
+                        render={() => (
+                          <FormItem>
+                            <div className="mb-4">
+                              <FormLabel className="text-base">
+                                Business Activities
+                              </FormLabel>
+                              <FormDescription>
+                                {type === "Freezone"
+                                  ? "You can select multiple activities for Freezone"
+                                  : "You can select only one activity for Mainland"}
+                              </FormDescription>
+                            </div>
+                            {businessActivities.map((activity) => (
+                              <FormField
+                                key={activity.id}
+                                control={form.control}
+                                name="businessActivities"
+                                render={({ field }) => {
+                                  return (
+                                    <FormItem
+                                      key={activity.id}
+                                      className="flex flex-row items-start space-x-3 space-y-0"
+                                    >
+                                      <FormControl>
+                                        <Checkbox
+                                          checked={field.value?.includes(
+                                            activity.id as any
+                                          )}
+                                          onCheckedChange={(checked) => {
+                                            const currentActivities = [
+                                              ...field.value,
+                                            ];
 
-                                  if (type === "Mainland") {
-                                    // For Mainland, only allow one selection
-                                    if (checked) {
-                                      form.setValue("businessActivities", [activity]);
-                                    } else {
-                                      form.setValue("businessActivities", []);
-                                    }
-                                  } else {
-                                    // For Freezone, allow multiple selections
-                                    if (checked) {
-                                      form.setValue("businessActivities", [
-                                        ...currentActivities,
-                                        activity,
-                                      ]);
-                                    } else {
-                                      form.setValue(
-                                        "businessActivities",
-                                        currentActivities.filter(
-                                          (value) => value !== activity
-                                        )
-                                      );
-                                    }
-                                  }
+                                            if (type === "Mainland") {
+                                              // For Mainland, only allow one selection
+                                              if (checked) {
+                                                field.onChange([activity.id]);
+                                              } else {
+                                                field.onChange([]);
+                                              }
+                                            } else {
+                                              // For Freezone, allow multiple selections
+                                              if (checked) {
+                                                field.onChange([
+                                                  ...currentActivities,
+                                                  activity.id,
+                                                ]);
+                                              } else {
+                                                field.onChange(
+                                                  currentActivities.filter(
+                                                    (value) =>
+                                                      value !== activity.id
+                                                  )
+                                                );
+                                              }
+                                            }
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <FormLabel className="font-normal">
+                                        {activity.label}
+                                      </FormLabel>
+                                    </FormItem>
+                                  );
                                 }}
                               />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              {activity}
-                            </FormLabel>
+                            ))}
+                            <FormMessage />
                           </FormItem>
-                        ))}
-                        {validationErrors.businessActivities && (
-                          <FormMessage>{validationErrors.businessActivities}</FormMessage>
                         )}
-                      </FormItem>
+                      />
 
-                      <FormItem>
-                        <FormLabel>Office Space Requirement</FormLabel>
-                        <Select
-                          onValueChange={(value) => form.setValue("officeSpace", value)}
-                          defaultValue={form.getValues("officeSpace")}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select option" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Yes">Yes</SelectItem>
-                            <SelectItem value="No">No</SelectItem>
-                            <SelectItem value="Not decided yet">
-                              Not decided yet
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="officeSpace"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Office Space Requirement</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select option" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Yes">Yes</SelectItem>
+                                <SelectItem value="No">No</SelectItem>
+                                <SelectItem value="Not decided yet">
+                                  Not decided yet
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
                       {/* Shareholders and Visas - full width on mobile, split on desktop */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormItem>
-                          <FormLabel>Number of Shareholders</FormLabel>
-                          <Select
-                            onValueChange={(value) => form.setValue("shareholders", value)}
-                            defaultValue={form.getValues("shareholders")}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select number" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {["1", "2", "3", "4", "5", "6"].map((num) => (
-                                <SelectItem key={num} value={num}>
-                                  {num}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
+                        <FormField
+                          control={form.control}
+                          name="shareholders"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Number of Shareholders</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select number" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {["1", "2", "3", "4", "5", "6"].map((num) => (
+                                    <SelectItem key={num} value={num}>
+                                      {num}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                        <FormItem>
-                          <FormLabel>Number of Visas</FormLabel>
-                          <Select
-                            onValueChange={(value) => form.setValue("visas", value)}
-                            defaultValue={form.getValues("visas")}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select number" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Array.from({ length: 16 }, (_, i) =>
-                                i.toString()
-                              ).map((num) => (
-                                <SelectItem key={num} value={num}>
-                                  {num}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
+                        <FormField
+                          control={form.control}
+                          name="visas"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Number of Visas</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select number" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {Array.from({ length: 16 }, (_, i) =>
+                                    i.toString()
+                                  ).map((num) => (
+                                    <SelectItem key={num} value={num}>
+                                      {num}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
                     </div>
                   </div>
@@ -713,26 +636,6 @@ export default function QuotationForm() {
                       {isSubmitting ? "Processing..." : "Generate Instant Quotation"}
                     </Button>
                   </div>
-                  
-                  {/* Error display */}
-                  {submitError && (
-                    <div className="text-red-500 text-center mt-2">
-                      Error: {submitError}
-                    </div>
-                  )}
-                  
-                  {/* Test button - Remove in production */}
-                  {process.env.NODE_ENV !== 'production' && (
-                    <div className="mt-4 text-center">
-                      <Button
-                        type="button"
-                        onClick={testZohoSubmission}
-                        className="bg-gray-500 hover:bg-gray-600 text-white"
-                      >
-                        Test Zoho Submission
-                      </Button>
-                    </div>
-                  )}
                 </form>
               </Form>
             </CardContent>
@@ -744,49 +647,40 @@ export default function QuotationForm() {
         </>
       )}
 
-      {/* Updated Zoho form embedded for lead submission */}
-      <form
-        id="zoho-react-form"
-        action="https://crm.zoho.com/crm/WebToLeadForm"
-        name="WebToLeads"
-        method="POST"
-        acceptCharset="UTF-8"
-        encType="multipart/form-data"
-        target="zoho_iframe"
-        style={{ display: "none" }}
-      >
-        {/* Required Zoho CRM fields */}
-        <input type="hidden" name="xnQsjsdp" value="eb7d36638cf2303463f51439dcd88af43be59e4c1a1ce0761d60600d51efd674" />
-        <input type="hidden" name="xmIwtLD" value="2161250700834bef045f4363e15f682c703e0d73b480216eefc4217ffc1fb588a32d46fe56efb3afa208d5cc247c2945" />
-        <input type="hidden" name="actionType" value="TGVhZHM=" />
-        <input type="hidden" name="returnURL" value="https://quote.g12.ae/" />
-        
-        {/* Lead information fields - changed from hidden to text type */}
-        <input type="text" name="First Name" />
-        <input type="text" name="Last Name" />
-        <input type="text" name="Email" />
-        <input type="text" name="Mobile" />
-        <input type="text" name="LEADCF6" /> {/* Nationality */}
-        <input type="text" name="LEADCF1" /> {/* Emirate */}
-        <input type="text" name="LEADCF4" /> {/* Type */}
-        <input type="text" name="LEADCF3" /> {/* Business Activities */}
-        <input type="text" name="LEADCF5" /> {/* Office Space */}
-        <input type="text" name="LEADCF2" /> {/* Shareholders */}
-        <input type="text" name="LEADCF7" /> {/* Visas */}
-        <input type="hidden" name="Lead Source" value="Cost Calculator" />
-        <input type="hidden" name="Campaign Name" value="UAE-Google-GoldenVisa-March25" />
-        
-        {/* Submit button */}
-        <input type="submit" style={{ display: "none" }} value="Submit" />
-      </form>
-      
-      {/* Capturing form submission response */}
-      <iframe 
-        name="zoho_iframe" 
-        id="zoho_iframe"
-        style={{ display: "none" }} 
-        title="Zoho CRM Response"
-      />
+      {/* Hidden Zoho Webform */}
+      <>
+        <form
+          ref={zohoFormRef}
+          action="https://crm.zoho.com/crm/WebToLeadForm"
+          name="WebToLeads6537170000006521088"
+          method="POST"
+          target="hidden_iframe"
+          style={{ display: "none" }}
+        >
+          <input type="hidden" name="xnQsjsdp" value="eb7d36638cf2303463f51439dcd88af43be59e4c1a1ce0761d60600d51efd674" />
+          <input type="hidden" name="xmIwtLD" value="2161250700834bef045f4363e15f682c703e0d73b480216eefc4217ffc1fb588a32d46fe56efb3afa208d5cc247c2945" />
+          <input type="hidden" name="actionType" value="TGVhZHM=" />
+          <input type="hidden" name="returnURL" value="https://quote.g12.ae/" />
+
+          <input name="First Name" value={form.getValues('firstName')} readOnly />
+          <input name="Last Name" value={form.getValues('lastName')} readOnly />
+          <input name="Email" value={form.getValues('email')} readOnly />
+          <input name="Mobile" value={form.getValues('mobile')} readOnly />
+          <input name="LEADCF17" value={form.getValues('inquiryType')} readOnly />
+          <input name="LEADCF23" value={form.getValues('type')} readOnly />
+          <input name="LEADCF22" value={form.getValues('emirate')} readOnly />
+          <input name="LEADCF21" value={form.getValues('businessActivities')} readOnly />
+          <input name="LEADCF24" value={form.getValues('officeSpace')} readOnly />
+          <input name="LEADCF26" value={form.getValues('shareholders')} readOnly />
+          <input name="LEADCF25" value={form.getValues('visas')} readOnly />
+          <input name="Lead Source" value="Cost Calculator" readOnly />
+          <input name="LEADCF3" value="25%" readOnly />
+          <input name="LEADCF2" value={form.getValues('campaignName')} readOnly />
+          <input name="LEADCF16" value={form.getValues('nationality')} readOnly />
+        </form>
+
+        <iframe name="hidden_iframe" style={{ display: "none" }}></iframe>
+      </>
     </div>
   );
 }
