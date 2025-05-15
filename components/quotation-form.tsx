@@ -176,7 +176,8 @@ export default function QuotationForm() {
         formElement.querySelector('input[name="LEADCF2"]').value = "G12 Quote AI";
         formElement.querySelector('input[name="LEADCF16"]').value = data.nationality;
 
-        formElement.submit();
+        formElement.querySelector('input[name="LEADCF67"]').value = `AED ${quotation.totalCost.toLocaleString()}`;
+      formElement.submit();
       }
 
       
