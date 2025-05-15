@@ -156,6 +156,37 @@ export default function QuotationForm() {
       
       // Show the quotation to the user
       setShowQuotation(true);
+
+      // ✅ Populate Zoho form fields before submission
+      const formElement = zohoFormRef.current;
+      if (formElement) {
+        formElement.querySelector('input[name="First Name"]').value = data.firstName;
+        formElement.querySelector('input[name="Last Name"]').value = data.lastName;
+        formElement.querySelector('input[name="Email"]').value = data.email;
+        formElement.querySelector('input[name="Mobile"]').value = data.mobile;
+        formElement.querySelector('input[name="LEADCF17"]').value = "Cost Calculator";
+        formElement.querySelector('input[name="LEADCF23"]').value = data.type;
+        formElement.querySelector('input[name="LEADCF22"]').value = data.emirate;
+        formElement.querySelector('input[name="LEADCF21"]').value = data.businessActivities.join(", ");
+        formElement.querySelector('input[name="LEADCF24"]').value = data.officeSpace;
+        formElement.querySelector('input[name="LEADCF26"]').value = data.shareholders;
+        formElement.querySelector('input[name="LEADCF25"]').value = data.visas;
+        formElement.querySelector('input[name="Lead Source"]').value = "Cost Calculator";
+        formElement.querySelector('input[name="LEADCF3"]').value = "25%";
+        formElement.querySelector('input[name="LEADCF2"]').value = "G12 Quote AI";
+        formElement.querySelector('input[name="LEADCF16"]').value = data.nationality;
+
+        
+        const cost = quotationData?.totalCost || 0;
+        const costField = formElement.querySelector('input[name="LEADCF67"]');
+        if (costField) {
+          costField.value = cost;
+          console.log("✅ Cost field set:", cost);
+        }
+
+        formElement.submit();
+      }
+
       
     } catch (error) {
       console.error('Error during form submission:', error);
@@ -613,7 +644,10 @@ export default function QuotationForm() {
                       {isSubmitting ? "Processing..." : "Generate Instant Quotation"}
                     </Button>
                   </div>
-                </form>
+                {typeof quotationData?.totalCost === "number" && (
+          <input name="LEADCF67" defaultValue="" style={{ display: "none" }} />
+          )}
+        </form>
               </Form>
             </CardContent>
           </Card>
@@ -654,6 +688,9 @@ export default function QuotationForm() {
           <input name="LEADCF3" value="25%" readOnly />
           <input name="LEADCF2" value={form.getValues('campaignName')} readOnly />
           <input name="LEADCF16" value={form.getValues('nationality')} readOnly />
+        {typeof quotationData?.totalCost === "number" && (
+          <input name="LEADCF67" defaultValue="" style={{ display: "none" }} />
+          )}
         </form>
 
         <iframe name="hidden_iframe" style={{ display: "none" }}></iframe>
