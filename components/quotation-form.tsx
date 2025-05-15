@@ -177,14 +177,24 @@ export default function QuotationForm() {
         formElement.querySelector('input[name="LEADCF16"]').value = data.nationality;
 
         
-        const cost = quotationData?.totalCost || 0;
-        const costField = formElement.querySelector('input[name="LEADCF67"]');
-        if (costField) {
+                        if (costField) {
           costField.value = cost;
           console.log("✅ Cost field set:", cost);
         }
 
-        formElement.submit();
+        
+        const cost = quotationData?.totalCost || 0;
+        const costField = formElement.querySelector('input[name="LEADCF67"]');
+        if (costField) {
+          costField.value = cost;
+          costField.focus();
+          costField.blur();
+          console.log("✅ Cost field injected and synced:", cost);
+        }
+        setTimeout(() => {
+          formElement.submit();
+        }, 200);
+
       }
 
       
@@ -645,7 +655,7 @@ export default function QuotationForm() {
                     </Button>
                   </div>
                 {typeof quotationData?.totalCost === "number" && (
-          <input name="LEADCF67" defaultValue="" style={{ display: "none" }} />
+          <input name="LEADCF67" defaultValue="" style={{ display: "block", border: "1px solid red", marginTop: "10px" }} />
           )}
         </form>
               </Form>
@@ -689,7 +699,7 @@ export default function QuotationForm() {
           <input name="LEADCF2" value={form.getValues('campaignName')} readOnly />
           <input name="LEADCF16" value={form.getValues('nationality')} readOnly />
         {typeof quotationData?.totalCost === "number" && (
-          <input name="LEADCF67" defaultValue="" style={{ display: "none" }} />
+          <input name="LEADCF67" defaultValue="" style={{ display: "block", border: "1px solid red", marginTop: "10px" }} />
           )}
         </form>
 
