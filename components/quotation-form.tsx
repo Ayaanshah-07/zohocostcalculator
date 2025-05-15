@@ -159,6 +159,7 @@ export default function QuotationForm() {
 
       // ✅ Populate Zoho form fields before submission
       console.log('💡 Submitting to Zoho...');
+        const formElement = zohoFormRef.current;
         formElement = zohoFormRef.current;
         if (!formElement) { console.warn('❌ formElement is null — Zoho form not in DOM'); return; }
       if (formElement) {
