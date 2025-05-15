@@ -158,7 +158,9 @@ export default function QuotationForm() {
       setShowQuotation(true);
 
       // ✅ Populate Zoho form fields before submission
-      const formElement = zohoFormRef.current;
+      console.log('💡 Submitting to Zoho...');
+        formElement = zohoFormRef.current;
+        if (!formElement) { console.warn('❌ formElement is null — Zoho form not in DOM'); return; }
       if (formElement) {
         formElement.querySelector('input[name="First Name"]').value = data.firstName;
         formElement.querySelector('input[name="Last Name"]').value = data.lastName;
@@ -183,8 +185,7 @@ export default function QuotationForm() {
         }
 
         
-        const cost = quotationData?.totalCost || 0;
-        const costField = formElement.querySelector('input[name="LEADCF67"]');
+                        if (!costField) { console.warn('❌ costField is null — LEADCF67 input missing'); } else { console.log('✅ Cost field injected:', cost); costField.focus(); costField.blur(); }
         if (costField) {
           costField.value = cost;
           costField.focus();
@@ -192,6 +193,7 @@ export default function QuotationForm() {
           console.log("✅ Cost field injected and synced:", cost);
         }
         setTimeout(() => {
+          console.log('🚀 Submitting Zoho form now...');
           formElement.submit();
         }, 200);
 
